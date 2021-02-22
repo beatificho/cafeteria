@@ -309,7 +309,16 @@ spec:
   selector:
     app: gateway
 ```
-*** 외부 접근 호출 capture(order, payment, drink, customercenter 각각) ***
+
+
+- order
+![image](https://user-images.githubusercontent.com/76020485/108672134-e53a2e80-7524-11eb-8008-ebcfbd8e9cbe.PNG)
+- payment
+![image](https://user-images.githubusercontent.com/76020485/108672136-e5d2c500-7524-11eb-824e-4066bb87376b.PNG)
+- drink
+![image](https://user-images.githubusercontent.com/76020485/108672138-e66b5b80-7524-11eb-9c27-cf2089f4ac08.PNG)
+- customercenter
+![image](https://user-images.githubusercontent.com/76020485/108672131-e4a19800-7524-11eb-894e-832ed6519b53.PNG)
 
 ## 폴리글랏 퍼시스턴스
 
@@ -1235,6 +1244,19 @@ root@siege-5b99b44c9c-ldf2l:/# siege -v -c100 -t60s --content-type "application/
 ** Preparing 100 concurrent users for battle.
 The server is now under siege...
 
+Transactions:		         900 hits
+Availability:		       76.08 %
+Elapsed time:		       59.33 secs
+Data transferred:	        0.34 MB
+Response time:		        6.14 secs
+Transaction rate:	       15.17 trans/sec
+Throughput:		        0.01 MB/sec
+Concurrency:		       93.08
+Successful transactions:         900
+Failed transactions:	         283
+Longest transaction:	       14.41
+Shortest transaction:	        0.04
+
 $ kubectl get pods
 NAME                              READY     STATUS    RESTARTS   AGE
 customercenter-59f4d6d897-lnpsh   1/1       Running   0          97m
@@ -1247,13 +1269,6 @@ payment-6f75856f77-gl24n          1/1       Running   0          41m
 payment-6f75856f77-htkn5          1/1       Running   0          118s
 payment-6f75856f77-rplpb          1/1       Running   0          118s
 siege-5b99b44c9c-ldf2l            1/1       Running   0          96m
-```
-
-- HPA를 확인한다.
-```
-$ kubectl get hpa 
-NAME      REFERENCE            TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
-payment   Deployment/payment   72%/15%   1         10        5          12m
 ```
 
 - 오토스케일이 어떻게 되고 있는지 모니터링을 걸어둔다:
