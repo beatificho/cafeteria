@@ -8,10 +8,8 @@
     - [DDD 의 적용](#ddd-의-적용)
     - [API Gateway](#API-GATEWAY)
     - [폴리글랏 퍼시스턴스](#폴리글랏-퍼시스턴스)
-    - [폴리글랏 프로그래밍](#폴리글랏-프로그래밍)
     - [동기식 호출 과 Fallback 처리](#동기식-호출-과-Fallback-처리)
     - [비동기식 호출 과 Eventual Consistency](#비동기식-호출--시간적-디커플링--장애격리--최종-eventual-일관성-테스트)
-    - [Saga Pattern / 보상 트랜잭션](#Saga-Pattern--보상-트랜잭션)
     - [CQRS / Meterialized View](#CQRS--Meterialized-View)
   - [운영](#운영)
     - [Liveness / Readiness 설정](#Liveness--Readiness-설정)
@@ -20,7 +18,6 @@
     - [동기식 호출 / 서킷 브레이킹 / 장애격리](#동기식-호출--서킷-브레이킹--장애격리)
     - [오토스케일 아웃](#오토스케일-아웃)
     - [무정지 재배포](#무정지-재배포)
-    - [모니터링](#모니터링)
     - [Persistence Volum Claim](#Persistence-Volum-Claim)
     - [ConfigMap / Secret](#ConfigMap--Secret)
 
@@ -322,42 +319,6 @@ spring:
 	</dependency>
 :
 </dependencies>
-
-```
-
-## 폴리글랏 프로그래밍
-
-고객관리 서비스(customercenter)의 시나리오인 주문상태 변경에 따라 고객에게 카톡메시지 보내는 기능의 구현 파트는 해당 팀이 scala를 이용하여 구현하기로 하였다. 해당 Scala 구현체는 각 이벤트를 수신하여 처리하는 Kafka consumer 로 구현되었고 코드는 다음과 같다:
-```
-import org.springframework.messaging.SubscribableChannel
-import org.springframework.cloud.stream.annotation.Output
-import org.springframework.cloud.stream.annotation.Input
-import org.springframework.messaging.MessageChannel
-
-object KafkaProcessor {
-  final val INPUT = "event-in"
-  final val OUTPUT = "event-out"
-}
-
-trait KafkaProcessor {
-
-  @Input(KafkaProcessor.INPUT)
-  def inboundTopic() :SubscribableChannel
-
-  @Output(KafkaProcessor.OUTPUT)
-  def outboundTopic() :MessageChannel
-}
-
- # 카톡호출 API
-import org.springframework.stereotype.Component
-
-@Component
-class KakaoServiceImpl extends KakaoService {
-  
-	override def sendKakao(message :KakaoMessage) {
-		logger.info(s"\nTo. ${message.phoneNumber}\n${message.message}\n")
-	}
-}
 
 ```
 
