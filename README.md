@@ -1225,26 +1225,29 @@ logging:
     org.springframework.cloud: debug
 
 # deployment.yaml
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: drink
+  name: point
   labels:
-    app: drink
+    app: point
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: drink
+      app: point
+  template:
+    metadata:
+      labels:
+        app: point
   template:
     metadata:
       labels:
         app: drink
     spec:
       containers:
-      - name: drink
-        image: beatific/drink:v1
+      - name: point
+        image: 496278789073.dkr.ecr.ap-northeast-2.amazonaws.com/skteam04/point:v2
         :
         volumeMounts:
         - name: logs
@@ -1252,14 +1255,14 @@ spec:
       volumes:
       - name: logs
         persistentVolumeClaim:
-          claimName: logs
+          claimName: point-logs
 
 # pvc.yaml
 
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: logs
+  name: point-logs
 spec:
   accessModes:
   - ReadWriteOnce
@@ -1270,14 +1273,14 @@ spec:
 drink deployment를 삭제하고 재기동해도 log는 삭제되지 않는다.
 
 ```
-$ kubectl delete -f drink/kubernetes/deployment.yml
-deployment.apps "drink" deleted
+$ kubectl delete -f point/kubernetes/deployment.yml
+deployment.apps "point" deleted
 
 $ kubectl apply -f drink/kubernetes/deployment.yml
-deployment.apps/drink created
+deployment.apps/point created
 
 $ kubectl exec -it drink-7cb565cb4-8c7pq -- /bin/sh
-/ # ls -l /logs/drink/
+/ # ls -l /logs/point/
 total 5568
 drwxr-xr-x    2 root     root          4096 Feb 20 00:00 logs
 -rw-r--r--    1 root     root       4626352 Feb 20 16:34 spring.log
