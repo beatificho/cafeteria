@@ -88,35 +88,22 @@ mvn spring-boot:run
 - 각 서비스내에 도출된 핵심 Aggregate Root 객체를 Entity 로 선언하였다
 
 ```
-package cafeteria;
+package cafeteriapoint;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.PostPersist;
-import javax.persistence.PostUpdate;
-import javax.persistence.Table;
-
+import javax.persistence.*;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import cafeteria.external.Payment;
-import cafeteria.external.PaymentService;
+import java.util.List;
 
 @Entity
-@Table(name="ORDER_MANAGEMENT")
-public class Order {
+@Table(name="Point_table")
+public class Point {
 
     @Id
     @GeneratedValue(strategy=GenerationType.AUTO)
     private Long id;
     private String phoneNumber;
-    private String productName;
-    private Integer qty;
-    private Integer amt;
-    private String status = "Ordered";
-
+    private Integer point;
+    
     public Long getId() {
         return id;
     }
@@ -124,152 +111,126 @@ public class Order {
     public void setId(Long id) {
         this.id = id;
     }
-    
     public String getPhoneNumber() {
-    	return phoneNumber;
+        return phoneNumber;
     }
+
     public void setPhoneNumber(String phoneNumber) {
-    	this.phoneNumber = phoneNumber;
+        this.phoneNumber = phoneNumber;
     }
-    
-    public String getProductName() {
-        return productName;
-    }
-
-    public void setProductName(String productName) {
-        this.productName = productName;
-    }
-    public Integer getQty() {
-        return qty;
+    public Integer getPoint() {
+        return point;
     }
 
-    public void setQty(Integer qty) {
-        this.qty = qty;
+    public void setPoint(Integer point) {
+        this.point = point;
     }
-    public Integer getAmt() {
-        return amt;
-    }
-
-    public void setAmt(Integer amt) {
-        this.amt = amt;
-    }
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
+    :
 
 ```
 - Entity Pattern 과 Repository Pattern 을 적용하여 JPA 를 통하여 다양한 데이터소스 유형 (RDB or NoSQL) 에 대한 별도의 처리가 없도록 데이터 접근 어댑터를 자동 생성하기 위하여 Spring Data REST 의 RestRepository 를 적용하였다
 ```
-package cafeteria;
+package cafeteriapoint;
+
+import java.util.List;
 
 import org.springframework.data.repository.PagingAndSortingRepository;
 
-public interface OrderRepository extends PagingAndSortingRepository<Order, Long>{
+public interface PointRepository extends PagingAndSortingRepository<Point, Long>{
+
+	public List<Point> findByPhoneNumber(String phoneNumber);
 }
 ```
 - 적용 후 REST API 의 테스트
 ```
-# order 서비스의 주문처리
-root@siege-5b99b44c9c-8qtpd:/# http http://order:8080/orders phoneNumber="01012345678" productName="coffee" qty=3 amt=5000
-HTTP/1.1 201 
-Content-Type: application/json;charset=UTF-8
-Date: Sat, 20 Feb 2021 14:20:20 GMT
-Location: http://order:8080/orders/1
-Transfer-Encoding: chunked
-{
-    "_links": {
-        "order": {
-            "href": "http://order:8080/orders/1"
-        },
-        "self": {
-            "href": "http://order:8080/orders/1"
-        }
-    },
-    "amt": 5000,
-    "createTime": "2021-02-20T14:20:17.783+0000",
-    "phoneNumber": "01012345678",
-    "productName": "coffee",
-    "qty": 3,
-    "status": "Ordered"
-}
-
-# payment 조회
-root@siege-5b99b44c9c-8qtpd:/# http http://payment:8080/payments/search/findByOrderId?orderId=1 
+# point 서비스의 전화번호 조회
+root@siege-5b99b44c9c-ldf2l:/# http http://point:8080/points/search/findByPhoneNumber?phoneNumber="01012345679"
 HTTP/1.1 200 
 Content-Type: application/hal+json;charset=UTF-8
-Date: Sat, 20 Feb 2021 14:21:21 GMT
+Date: Tue, 23 Feb 2021 06:36:08 GMT
 Transfer-Encoding: chunked
+
 {
     "_embedded": {
-        "payments": [
+        "points": [
             {
                 "_links": {
-                    "payment": {
-                        "href": "http://payment:8080/payments/1"
+                    "point": {
+                        "href": "http://point:8080/points/1"
                     },
                     "self": {
-                        "href": "http://payment:8080/payments/1"
+                        "href": "http://point:8080/points/1"
                     }
                 },
-                "amt": 5000,
-                "createTime": "2021-02-20T14:20:19.020+0000",
-                "orderId": 1,
-                "phoneNumber": "01012345678",
-                "status": "PaymentApproved"
+                "phoneNumber": "01012345679",
+                "point": 150
             }
         ]
     },
     "_links": {
         "self": {
-            "href": "http://payment:8080/payments/search/findByOrderId?orderId=1"
+            "href": "http://point:8080/points/search/findByPhoneNumber?phoneNumber=01012345679"
         }
     }
 }
 
-# drink 서비스의 접수처리
-root@siege-5b99b44c9c-8qtpd:/# http patch http://drink:8080/drinks/1 status="Receipted"
+
+# order 서비스의 주문 취소처리
+http patch http://order:8080/orders/3 status="OrderCanceled"
 HTTP/1.1 200 
 Content-Type: application/json;charset=UTF-8
-Date: Sat, 20 Feb 2021 14:32:03 GMT
+Date: Tue, 23 Feb 2021 06:37:12 GMT
 Transfer-Encoding: chunked
+
 {
     "_links": {
-        "drink": {
-            "href": "http://drink:8080/drinks/1"
+        "order": {
+            "href": "http://order:8080/orders/3"
         },
         "self": {
-            "href": "http://drink:8080/drinks/1"
+            "href": "http://order:8080/orders/3"
         }
     },
-    "createTime": "2021-02-20T14:29:13.533+0000",
-    "orderId": 1,
-    "phoneNumber": "01012345678",
+    "amt": 500,
+    "createTime": "2021-02-23T06:35:06.413+0000",
+    "phoneNumber": "01012345679",
     "productName": "coffee",
     "qty": 3,
-    "status": "Receipted"
+    "status": "OrderCanceled"
 }
 
-# customercenter 서비스의 상태확인
-root@siege-5b99b44c9c-8qtpd:/# http http://customercenter:8080/mypages/search/findByPhoneNumber?phoneNumber="01012345678"
+# point 조회
+root@siege-5b99b44c9c-ldf2l:/# http http://point:8080/points/search/findByPhoneNumber?phoneNumber="01012345679"
 HTTP/1.1 200 
-Content-Type: application/json;charset=UTF-8
-Date: Sat, 20 Feb 2021 14:36:15 GMT
+Content-Type: application/hal+json;charset=UTF-8
+Date: Tue, 23 Feb 2021 06:38:02 GMT
 Transfer-Encoding: chunked
-[
-    {
-        "amt": 5000,
-        "id": 1,
-        "orderId": 1,
-        "phoneNumber": "01012345678",
-        "productName": "coffee",
-        "qty": 3,
-        "status": "Ordered"
+
+{
+    "_embedded": {
+        "points": [
+            {
+                "_links": {
+                    "point": {
+                        "href": "http://point:8080/points/1"
+                    },
+                    "self": {
+                        "href": "http://point:8080/points/1"
+                    }
+                },
+                "phoneNumber": "01012345679",
+                "point": 100
+            }
+        ]
+    },
+    "_links": {
+        "self": {
+            "href": "http://point:8080/points/search/findByPhoneNumber?phoneNumber=01012345679"
+        }
     }
-]
+}
+
+
 ```
 
 ## API Gateway
@@ -300,6 +261,10 @@ spring:
           uri: http://customercenter:8080
           predicates:
             - Path= /mypages/**
+        - id: point
+          uri: http://point:8080
+          predicates:
+            - Path= /points/**
 
 # service.yaml
 apiVersion: v1
@@ -318,11 +283,12 @@ spec:
     
 $ kubectl get svc
 NAME             TYPE           CLUSTER-IP       EXTERNAL-IP                                                                  PORT(S)          AGE
-customercenter   ClusterIP      10.100.52.95     <none>                                                                       8080/TCP         9h
-drink            ClusterIP      10.100.136.6     <none>                                                                       8080/TCP         9h
-gateway          LoadBalancer   10.100.164.152   a6826d83b5c8e4f5dad7129c7cdf0ded-93964597.ap-northeast-2.elb.amazonaws.com   8080:30109/TCP   9h
-order            ClusterIP      10.100.197.15    <none>                                                                       8080/TCP         9h
-payment          ClusterIP      10.100.242.153   <none>                                                                       8080/TCP         9h
+customercenter   ClusterIP      10.100.52.95     <none>                                                                       8080/TCP         25h
+drink            ClusterIP      10.100.136.6     <none>                                                                       8080/TCP         25h
+gateway          LoadBalancer   10.100.164.152   a6826d83b5c8e4f5dad7129c7cdf0ded-93964597.ap-northeast-2.elb.amazonaws.com   8080:30109/TCP   25h
+order            ClusterIP      10.100.197.15    <none>                                                                       8080/TCP         25h
+payment          ClusterIP      10.100.242.153   <none>                                                                       8080/TCP         25h
+point            ClusterIP      10.100.165.131   <none>                                                                       8080/TCP         3h47m
 
 ```
  - order  
@@ -333,74 +299,32 @@ payment          ClusterIP      10.100.242.153   <none>                         
 ![image](https://user-images.githubusercontent.com/76020485/108672138-e66b5b80-7524-11eb-9c27-cf2089f4ac08.PNG)
  - customercenter  
 ![image](https://user-images.githubusercontent.com/76020485/108672131-e4a19800-7524-11eb-894e-832ed6519b53.PNG)
+ - point
 
 ## 폴리글랏 퍼시스턴스
 
-고객센터(customercenter)는 RDB 보다는 Document DB / NoSQL 계열의 데이터베이스인 Mongo DB 를 사용하기로 하였다. 이를 위해 customercenter의 선언에는 @Entity 가 아닌 @Document로 변경 되었으며, 기존의 Entity Pattern 과 Repository Pattern 적용과 데이터베이스 제품의 설정 (application.yml)과 아래 채번기능 개발 만으로 MongoDB 에 부착시켰다
+point 서비스는 maria DB에 익숙한 개발자가 많아 maria DB를 사용하기로 하였다. 이를 위해 point는 별다른 작업없이 기존의 Entity Pattern 과 Repository Pattern 적용과 데이터베이스 제품의 설정 (application.yml) 만으로 maria db에 부착시켰다
 ```
-#Mypage.scala
-
-@Document
-class Mypage {
-  
-  @Id
-  @BeanProperty
-  var id :Long = 0L
-  :
-```
-MongoDB는 Sequence가 지원되지 않아 별도 Collection을 통해서 id sequence를 생성했다.
-```
-# DatabseSequence.scala
-abstract class Sequence {
-  var seq :Long
-}
-case class InitialSequence(var seq : Long) extends Sequence
-
-@Document(collection = "database_sequences")
-class DatabaseSequence extends Sequence {
-
-  
-  @BeanProperty
-  @Id
-  var id: String = null
-  
-  @BeanProperty
-  var seq :Long = 0L
-
-}
-
-# MypageViewHandler.scala
-
-def generateSequence (seqName :String) :Long = {
-    val query :Query = new Query(Criteria.where("_id").is(seqName));
-    val options :FindAndModifyOptions = new FindAndModifyOptions().returnNew(true).upsert(true)
-    val update :Update = new Update().inc("seq",1)
-    
-    val sequence :Option[DatabaseSequence] = Option(mongoOperations.findAndModify(query, update, options, classOf[DatabaseSequence]))
-    sequence.getOrElse(InitialSequence(1L)).seq
-}
-  
-  @StreamListener(KafkaProcessor.INPUT)
-  def whenOrdered_then_CREATE_1(@Payload ordered :Ordered) {
-    try {
-      if (ordered.isMe()) {
-        
-        val mypage :Mypage = new Mypage()
-        mypage.id = generateSequence(Mypage.SEQUENCE_NAME)
-	:
-
+#application.yml
+spring:
+  datasource:
+    url: jdbc:mariadb://my-mariadb-mariadb-galera.mariadb.svc.cluster.local:3306/${MARIADB_DATABASE}
+    driver-class-name: org.mariadb.jdbc.Driver
+    username: ${MARIADB_USERNAME}
+    password: ${MARIADB_PASSWORD} 
+	  
 #pom.xml
-
 <dependencies>
 :
-    <dependency>
-	<groupId>org.springframework.boot</groupId>
-	<artifactId>spring-boot-starter-data-mongodb</artifactId>
-    </dependency>
+	<dependency>
+		<groupId>org.mariadb.jdbc</groupId> 
+		<artifactId>mariadb-java-client</artifactId> 
+	</dependency>
 :
 </dependencies>
 
 ```
+
 ## 폴리글랏 프로그래밍
 
 고객관리 서비스(customercenter)의 시나리오인 주문상태 변경에 따라 고객에게 카톡메시지 보내는 기능의 구현 파트는 해당 팀이 scala를 이용하여 구현하기로 하였다. 해당 Scala 구현체는 각 이벤트를 수신하여 처리하는 Kafka consumer 로 구현되었고 코드는 다음과 같다:
@@ -444,7 +368,7 @@ class KakaoServiceImpl extends KakaoService {
 - 결제서비스를 호출하기 위하여 Stub과 (FeignClient) 를 이용하여 Service 대행 인터페이스 (Proxy) 를 구현 
 
 ```
-# (payment) PaymentService.java
+# (order) PointService.java
 
 package cafeteria.external;
 
@@ -453,86 +377,91 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
-@FeignClient(name="payment", url="${feign.client.payment.url}")
-public interface PaymentService {
+import cafeteria.OrderCanceled;
 
-    @RequestMapping(method= RequestMethod.POST, path="/payments")
-    public void pay(@RequestBody Payment payment);
+@RequestMapping("/points")
+@FeignClient(name="point", url="${feign.client.point.url}")
+public interface PointService {
+
+    @RequestMapping(path = "/cancelPoint", method = RequestMethod.PATCH)
+	public void cancelPoint(@RequestBody OrderCanceled orderCanceled);
 
 }
 ```
 
-- 주문을 받은 직후(@PostPersist) 결제를 요청하도록 처리
+- 주문 취소 직후(@PostUpdate) 결제를 요청하도록 처리
 ```
 # Order.java (Entity)
 
-    @PostPersist
-    public void onPostPersist(){
-        :
-
-        Payment payment = new Payment();
-        payment.setOrderId(this.id);
-        payment.setPhoneNumber(this.phoneNumber);
-        payment.setAmt(this.amt);
-        
-        OrderApplication.applicationContext.getBean(PaymentService.class).pay(payment);
-
+    @PostUpdate
+    public void onPostUpdate(){
+        switch(this.status) {
+    	case "OrderCanceled" : 
+    		
+    	    OrderCanceled orderCanceled = new OrderCanceled();
+            BeanUtils.copyProperties(this, orderCanceled);
+            orderCanceled.publishAfterCommit();
+            
+            OrderApplication.applicationContext.getBean(PointService.class).cancelPoint(orderCanceled);
+            break;
+    	}
 
     }
 ```
 
-- 동기식 호출에서는 호출 시간에 따른 타임 커플링이 발생하며, 결제 시스템이 장애가 나면 주문도 못받는다는 것을 확인:
+- 동기식 호출에서는 호출 시간에 따른 타임 커플링이 발생하며, 포인트 시스템이 장애가 나면 주문취소도 못한는다는 것을 확인:
 
 
 ```
-# 결제 (payment) 서비스를 잠시 내려놓음
-$ kubectl delete deploy payment
-deployment.apps "payment" deleted
+# 포인트 (point) 서비스를 잠시 내려놓음
+$ kubectl delete deploy point
+deployment.apps "point" deleted
 
-#주문처리
+#주문취소
 
-root@siege-5b99b44c9c-8qtpd:/# http http://order:8080/orders phoneNumber="01012345679" productName="coffee" qty=3 amt=5000
+root@siege-5b99b44c9c-ldf2l:/# http patch http://order:8080/orders/4 status="OrderCanceled"
 HTTP/1.1 500 
 Connection: close
 Content-Type: application/json;charset=UTF-8
-Date: Sat, 20 Feb 2021 14:39:23 GMT
+Date: Tue, 23 Feb 2021 06:52:57 GMT
 Transfer-Encoding: chunked
+
 {
     "error": "Internal Server Error",
     "message": "Could not commit JPA transaction; nested exception is javax.persistence.RollbackException: Error while committing the transaction",
-    "path": "/orders",
+    "path": "/orders/4",
     "status": 500,
-    "timestamp": "2021-02-20T14:39:23.185+0000"
+    "timestamp": "2021-02-23T06:52:57.358+0000"
 }
 
-#결제서비스 재기동
+
+# 포인트 서비스 재기동
 $ kubectl apply -f deployment.yml
-deployment.apps/payment created
+deployment.apps/point created
 
 #주문처리
 
-root@siege-5b99b44c9c-8qtpd:/# http http://order:8080/orders phoneNumber="01012345679" productName="coffee" qty=3 amt=5000
-HTTP/1.1 201 
+root@siege-5b99b44c9c-ldf2l:/# http patch http://order:8080/orders/4 status="OrderCanceled"
+HTTP/1.1 200 
 Content-Type: application/json;charset=UTF-8
-Date: Sat, 20 Feb 2021 14:51:42 GMT
-Location: http://order:8080/orders/6
+Date: Tue, 23 Feb 2021 06:54:44 GMT
 Transfer-Encoding: chunked
 
 {
     "_links": {
         "order": {
-            "href": "http://order:8080/orders/6"
+            "href": "http://order:8080/orders/4"
         },
         "self": {
-            "href": "http://order:8080/orders/6"
+            "href": "http://order:8080/orders/4"
         }
     },
-    "amt": 5000,
-    "createTime": "2021-02-20T14:51:40.580+0000",
+    "amt": 500,
+    "createTime": "2021-02-23T06:52:42.048+0000",
     "phoneNumber": "01012345679",
     "productName": "coffee",
     "qty": 3,
-    "status": "Ordered"
+    "status": "OrderCanceled"
 }
 ```
 - 또한 과도한 요청시에 서비스 장애가 도미노 처럼 벌어질 수 있다. (서킷브레이커, 폴백 처리는 운영단계에서 설명한다.)
@@ -571,18 +500,27 @@ package cafeteria;
 :
 
     @StreamListener(KafkaProcessor.INPUT)
-    public void wheneverOrdered_(@Payload Ordered ordered){
-
-        if(ordered.isMe()){
-            log.info("##### listener  : " + ordered.toJson());
-            
-            List<Drink> drinks = drinkRepository.findByOrderId(ordered.getId());
-            for(Drink drink : drinks) {
-           	drink.setPhoneNumber(ordered.getPhoneNumber());
-            	drink.setProductName(ordered.getProductName());
-               	drink.setQty(ordered.getQty());
-               	drinkRepository.save(drink);
+    public void whenPaymentApproved_then_CREATE_1 (@Payload PaymentApproved paymentApproved) {
+        try {
+            if (paymentApproved.isMe()) {
+            	
+            	List<Point> points = pointRepository.findByPhoneNumber(paymentApproved.getPhoneNumber());
+            	int p = (int)(paymentApproved.getAmt() * 0.1);
+            	
+            	Point point = null;
+            	if(points.size() == 0) {
+            		point = new Point();
+            		point.setPhoneNumber(paymentApproved.getPhoneNumber());
+            		point.setPoint(p);
+            		pointRepository.save(point);
+            	} else {
+            		point = points.get(0);
+            		point.setPoint(point.getPoint() + p);
+	        	pointRepository.save(point);
+            	}
             }
+        }catch (Exception e){
+            e.printStackTrace();
         }
     }
 
@@ -594,384 +532,191 @@ spring:
     stream:
       bindings:
         event-in:
-          group: drink
+          group: point
           destination: cafeteria
           contentType: application/json
         :
 ```
-실제 구현에서 카톡은 화면에 출력으로 대체하였다.
-  
-```    
-  @StreamListener(KafkaProcessor.INPUT)
-  def whenReceipted_then_UPDATE_3(@Payload made :Made) {
-    try {
-      if (made.isMe()) {
-        
-        val message :KakaoMessage = new KakaoMessage()
-        message.phoneNumber = made.phoneNumber
-        message.message = s"""Your Order is ${made.status}\nCome and Take it, Please!"""
-        kakaoService.sendKakao(message)
-      }
-    } catch {
-      case e :Exception => e.printStackTrace()
+
+포인트 시스템은 주문/결제와 완전히 분리되어있으며, 이벤트 수신에 따라 처리되기 때문에, 포인트시스템이 유지보수로 인해 잠시 내려간 상태라도 주문을 받는데 문제가 없다:
+```
+# 포인트 서비스 (point) 를 잠시 내려놓음
+$ kubectl delete deploy point
+deployment.apps "point" deleted
+
+#현재 포인트 확인
+root@siege-5b99b44c9c-ldf2l:/# http http://point:8080/points/search/findByPhoneNumber?phoneNumber="01012345679"
+HTTP/1.1 200 
+Content-Type: application/hal+json;charset=UTF-8
+Date: Tue, 23 Feb 2021 06:56:02 GMT
+Transfer-Encoding: chunked
+
+{
+    "_embedded": {
+        "points": [
+            {
+                "_links": {
+                    "point": {
+                        "href": "http://point:8080/points/1"
+                    },
+                    "self": {
+                        "href": "http://point:8080/points/1"
+                    }
+                },
+                "phoneNumber": "01012345679",
+                "point": 100
+            }
+        ]
+    },
+    "_links": {
+        "self": {
+            "href": "http://point:8080/points/search/findByPhoneNumber?phoneNumber=01012345679"
+        }
     }
-  }
-
-@Component
-class KakaoServiceImpl extends KakaoService {
-  
-	override def sendKakao(message :KakaoMessage) {
-		logger.info(s"\nTo. ${message.phoneNumber}\n${message.message}\n")
-	}
 }
-
-```
-
-음료 시스템은 주문/결제와 완전히 분리되어있으며, 이벤트 수신에 따라 처리되기 때문에, 음료시스템이 유지보수로 인해 잠시 내려간 상태라도 주문을 받는데 문제가 없다:
-```
-# 음료 서비스 (drink) 를 잠시 내려놓음
-$ kubectl delete deploy drink
-deployment.apps "drink" deleted
-
 #주문처리
-root@siege-5b99b44c9c-8qtpd:/# http http://order:8080/orders phoneNumber="01012345679" productName="coffee" qty=3 amt=5000
+root@siege-5b99b44c9c-ldf2l:/# http http://order:8080/orders phoneNumber="01012345679" productName="coffee" qty=3 amt=500
 HTTP/1.1 201 
 Content-Type: application/json;charset=UTF-8
-Date: Sat, 20 Feb 2021 14:53:25 GMT
-Location: http://order:8080/orders/7
+Date: Tue, 23 Feb 2021 06:58:35 GMT
+Location: http://order:8080/orders/5
 Transfer-Encoding: chunked
 
 {
     "_links": {
         "order": {
-            "href": "http://order:8080/orders/7"
+            "href": "http://order:8080/orders/5"
         },
         "self": {
-            "href": "http://order:8080/orders/7"
+            "href": "http://order:8080/orders/5"
         }
     },
-    "amt": 5000,
-    "createTime": "2021-02-20T14:53:25.115+0000",
+    "amt": 500,
+    "createTime": "2021-02-23T06:58:35.815+0000",
     "phoneNumber": "01012345679",
     "productName": "coffee",
     "qty": 3,
     "status": "Ordered"
 }
-#음료 서비스 기동
+
+# 포인트 서비스 기동
 kubectl apply -f deployment.yml
-deployment.apps/drink created
+deployment.apps/point created
 
-#음료등록 확인
-
-root@siege-5b99b44c9c-8qtpd:/# http http://drink:8080/drinks/search/findByOrderId?orderId=7
+# 포인트 적립 확인
+root@siege-5b99b44c9c-ldf2l:/# http http://point:8080/points/search/findByPhoneNumber?phoneNumber="01012345679"
 HTTP/1.1 200 
 Content-Type: application/hal+json;charset=UTF-8
-Date: Sat, 20 Feb 2021 14:54:14 GMT
+Date: Tue, 23 Feb 2021 07:00:04 GMT
 Transfer-Encoding: chunked
 
 {
     "_embedded": {
-        "drinks": [
+        "points": [
             {
                 "_links": {
-                    "drink": {
-                        "href": "http://drink:8080/drinks/4"
+                    "point": {
+                        "href": "http://point:8080/points/1"
                     },
                     "self": {
-                        "href": "http://drink:8080/drinks/4"
+                        "href": "http://point:8080/points/1"
                     }
                 },
-                "createTime": "2021-02-20T14:53:25.194+0000",
-                "orderId": 7,
                 "phoneNumber": "01012345679",
-                "productName": "coffee",
-                "qty": 3,
-                "status": "PaymentApproved"
+                "point": 150
             }
         ]
     },
     "_links": {
         "self": {
-            "href": "http://drink:8080/drinks/search/findByOrderId?orderId=7"
+            "href": "http://point:8080/points/search/findByPhoneNumber?phoneNumber=01012345679"
         }
     }
 }
 
-```
-
-
-## Saga Pattern / 보상 트랜잭션
-
-음료 주문 취소는 바리스타가 음료 접수하기 전에만 취소가 가능하다.
-음료 접수 후에 취소할 경우 보상트랜재션을 통하여 취소를 원복한다.
-음료 주문 취소는 Saga Pattern으로 만들어져 있어 바리스타가 음료를 이미 접수하였을 경우 취소실패를 Event로 publish하고
-Order 서비스에서 취소실패 Event를 Subscribe하여 주문취소를 원복한다.
-```
-# 주문
-root@siege-5b99b44c9c-8qtpd:/# http http://order:8080/orders/5
-HTTP/1.1 200 
-Content-Type: application/hal+json;charset=UTF-8
-Date: Sat, 20 Feb 2021 08:58:19 GMT
-Transfer-Encoding: chunked
-{
-    "_links": {
-        "order": {
-            "href": "http://order:8080/orders/5"
-        },
-        "self": {
-            "href": "http://order:8080/orders/5"
-        }
-    },
-    "amt": 100,
-    "createTime": "2021-02-20T08:51:17.441+0000",
-    "phoneNumber": "01033132570",
-    "productName": "coffee",
-    "qty": 2,
-    "status": "Ordered"
-}
-
-# 결제 상태 확인 
-root@siege-5b99b44c9c-8qtpd:/# http http://payment:8080/payments/search/findByOrderId?orderId=5
-HTTP/1.1 200 
-Content-Type: application/hal+json;charset=UTF-8
-Date: Sat, 20 Feb 2021 08:58:54 GMT
-Transfer-Encoding: chunked
-
-{
-    "_embedded": {
-        "payments": [
-            {
-                "_links": {
-                    "payment": {
-                        "href": "http://payment:8080/payments/5"
-                    },
-                    "self": {
-                        "href": "http://payment:8080/payments/5"
-                    }
-                },
-                "amt": 100,
-                "createTime": "2021-02-20T08:51:17.452+0000",
-                "orderId": 5,
-                "phoneNumber": "01033132570",
-                "status": "PaymentApproved"
-            }
-        ]
-    },
-    "_links": {
-        "self": {
-            "href": "http://payment:8080/payments/search/findByOrderId?orderId=5"
-        }
-    }
-}
-
-# 음료 상태 확인
-root@siege-5b99b44c9c-8qtpd:/# http http://drink:8080/drinks/search/findByOrderId?orderId=5                              
-HTTP/1.1 200 
-Content-Type: application/hal+json;charset=UTF-8
-Date: Sat, 20 Feb 2021 08:52:14 GMT
-Transfer-Encoding: chunked
-
-{
-    "_embedded": {
-        "drinks": [
-            {
-                "_links": {
-                    "drink": {
-                        "href": "http://drink:8080/drinks/5"
-                    },
-                    "self": {
-                        "href": "http://drink:8080/drinks/5"
-                    }
-                },
-                "createTime": "2021-02-20T08:51:17.515+0000",
-                "orderId": 5,
-                "phoneNumber": "01033132570",
-                "productName": "coffee",
-                "qty": 2,
-                "status": "PaymentApproved"
-            }
-        ]
-    },
-    "_links": {
-        "self": {
-            "href": "http://drink:8080/drinks/search/findByOrderId?orderId=5"
-        }
-    }
-}
-
-# 음료 접수
-root@siege-5b99b44c9c-8qtpd:/# http patch http://drink:8080/drinks/5 status="Receipted"
-HTTP/1.1 200 
-Content-Type: application/json;charset=UTF-8
-Date: Sat, 20 Feb 2021 08:53:29 GMT
-Transfer-Encoding: chunked
-{
-    "_links": {
-        "drink": {
-            "href": "http://drink:8080/drinks/5"
-        },
-        "self": {
-            "href": "http://drink:8080/drinks/5"
-        }
-    },
-    "createTime": "2021-02-20T08:51:17.515+0000",
-    "orderId": 5,
-    "phoneNumber": "01033132570",
-    "productName": "coffee",
-    "qty": 2,
-    "status": "Receipted"
-}
-
-# 주문 취소
-root@siege-5b99b44c9c-8qtpd:/# http patch http://order:8080/orders/5 status="OrderCanceled"
-HTTP/1.1 200 
-Content-Type: application/json;charset=UTF-8
-Date: Sat, 20 Feb 2021 08:54:29 GMT
-Transfer-Encoding: chunked
-{
-    "_links": {
-        "order": {
-            "href": "http://order:8080/orders/5"
-        },
-        "self": {
-            "href": "http://order:8080/orders/5"
-        }
-    },
-    "amt": 100,
-    "createTime": "2021-02-20T08:51:17.441+0000",
-    "phoneNumber": "01033132570",
-    "productName": "coffee",
-    "qty": 2,
-    "status": "OrderCanceled"
-}
-
-# 주문 조회
-root@siege-5b99b44c9c-8qtpd:/# http http://order:8080/orders/5
-HTTP/1.1 200 
-Content-Type: application/hal+json;charset=UTF-8
-Date: Sat, 20 Feb 2021 09:07:49 GMT
-Transfer-Encoding: chunked
-
-{
-    "_links": {
-        "order": {
-            "href": "http://order:8080/orders/5"
-        },
-        "self": {
-            "href": "http://order:8080/orders/5"
-        }
-    },
-    "amt": 100,
-    "createTime": "2021-02-20T09:07:24.114+0000",
-    "phoneNumber": "01033132570",
-    "productName": "coffee",
-    "qty": 2,
-    "status": "Ordered"
-}
-
-# 결제 상태 확인
-root@siege-5b99b44c9c-8qtpd:/# http http://payment:8080/payments/5
-HTTP/1.1 200 
-Content-Type: application/hal+json;charset=UTF-8
-Date: Sat, 20 Feb 2021 09:21:59 GMT
-Transfer-Encoding: chunked
-
-{
-    "_links": {
-        "payment": {
-            "href": "http://payment:8080/payments/5"
-        },
-        "self": {
-            "href": "http://payment:8080/payments/5"
-        }
-    },
-    "amt": 100,
-    "createTime": "2021-02-20T08:51:17.452+0000",
-    "orderId": 5,
-    "phoneNumber": "01033132570",
-    "status": "PaymentApproved"
-}
-
-# 음료 상태 확인
-root@siege-5b99b44c9c-8qtpd:/# http http://drink:8080/drinks/5
-HTTP/1.1 200 
-Content-Type: application/hal+json;charset=UTF-8
-Date: Sat, 20 Feb 2021 09:22:47 GMT
-Transfer-Encoding: chunked
-
-{
-    "_links": {
-        "drink": {
-            "href": "http://drink:8080/drinks/5"
-        },
-        "self": {
-            "href": "http://drink:8080/drinks/5"
-        }
-    },
-    "createTime": "2021-02-20T08:51:17.515+0000",
-    "orderId": 5,
-    "phoneNumber": "01033132570",
-    "productName": "coffee",
-    "qty": 2,
-    "status": "Receipted"
-}
-
-```
-
-CancelFailed Event는 Customercenter 서비스에서도 subscribe하여 카카오톡으로 취소 실패된 내용을 전달한다.
-```
-2021-02-20 09:08:42.668  INFO 1 --- [container-0-C-1] cafeteria.external.KakaoServiceImpl      :
-To. 01033132570
-Your Order is already started. You cannot cancel!!
 ```
 
 ## CQRS / Meterialized View
-CustomerCenter의 Mypage를 구현하여 Order 서비스, Payment 서비스, Drink 서비스의 데이터를 Composite서비스나 DB Join없이 조회할 수 있다.
+Point서비스의 PointHistory를 구현하여 Order 서비스, Payment 서비스의 데이터를 Composite서비스나 DB Join없이 조회할 수 있다.
 ```
-root@siege-5b99b44c9c-8qtpd:/# http http://customercenter:8080/mypages/search/findByPhoneNumber?phoneNumber="01012345679"
+root@siege-5b99b44c9c-ldf2l:/# http http://point:8080/pointHistories/search/findByPhoneNumberOrderByCreateTime?phoneNumber="01012345678"
 HTTP/1.1 200 
-Content-Type: application/json;charset=UTF-8
-Date: Sat, 20 Feb 2021 14:57:45 GMT
+Content-Type: application/hal+json;charset=UTF-8
+Date: Tue, 23 Feb 2021 07:27:16 GMT
 Transfer-Encoding: chunked
 
-[
-    {
-        "amt": 5000,
-        "id": 4544,
-        "orderId": 4,
-        "phoneNumber": "01012345679",
-        "productName": "coffee",
-        "qty": 3,
-        "status": "Made"
+{
+    "_embedded": {
+        "pointHistories": [
+            {
+                "_links": {
+                    "pointHistory": {
+                        "href": "http://point:8080/pointHistories/12"
+                    },
+                    "self": {
+                        "href": "http://point:8080/pointHistories/12"
+                    }
+                },
+                "amt": 500,
+                "createTime": "2021-02-23T07:26:59.019+0000",
+                "orderId": 16,
+                "paymentId": 19,
+                "phoneNumber": "01012345678",
+                "point": 50,
+                "productName": "coffee",
+                "qty": 3,
+                "totalPoint": 150,
+                "type": "Order"
+            },
+            {
+                "_links": {
+                    "pointHistory": {
+                        "href": "http://point:8080/pointHistories/13"
+                    },
+                    "self": {
+                        "href": "http://point:8080/pointHistories/13"
+                    }
+                },
+                "amt": 500,
+                "createTime": "2021-02-23T07:27:00.128+0000",
+                "orderId": 17,
+                "paymentId": 20,
+                "phoneNumber": "01012345678",
+                "point": 50,
+                "productName": "coffee",
+                "qty": 3,
+                "totalPoint": 200,
+                "type": "Order"
+            },
+            {
+                "_links": {
+                    "pointHistory": {
+                        "href": "http://point:8080/pointHistories/14"
+                    },
+                    "self": {
+                        "href": "http://point:8080/pointHistories/14"
+                    }
+                },
+                "amt": 500,
+                "createTime": "2021-02-23T07:27:14.618+0000",
+                "orderId": 18,
+                "paymentId": 21,
+                "phoneNumber": "01012345678",
+                "point": 50,
+                "productName": "coffee",
+                "qty": 3,
+                "totalPoint": 250,
+                "type": "Order"
+            }
+        ]
     },
-    {
-        "amt": 5000,
-        "id": 4545,
-        "orderId": 5,
-        "phoneNumber": "01012345679",
-        "productName": "coffee",
-        "qty": 3,
-        "status": "Ordered"
-    },
-    {
-        "amt": 5000,
-        "id": 4546,
-        "orderId": 6,
-        "phoneNumber": "01012345679",
-        "productName": "coffee",
-        "qty": 3,
-        "status": "Receipted"
-    },
-    {
-        "amt": 5000,
-        "id": 4547,
-        "orderId": 7,
-        "phoneNumber": "01012345679",
-        "productName": "coffee",
-        "qty": 3,
-        "status": "Ordered"
+    "_links": {
+        "self": {
+            "href": "http://point:8080/pointHistories/search/findByPhoneNumberOrderByCreateTime?phoneNumber=01012345678"
+        }
     }
-]
+}
+
 
 ```
 
@@ -983,9 +728,9 @@ Pod 생성 시 준비되지 않은 상태에서 요청을 받아 오류가 발�
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: order
+  name: point
   labels:
-    app: order
+    app: point
 spec:
   :
         readinessProbe:
@@ -996,7 +741,7 @@ spec:
           timeoutSeconds: 2 
           periodSeconds: 5 
           failureThreshold: 10
-        livenessProbe:
+        livenessProbe:	
           httpGet:
             path: '/actuator/health'
             port: 8080
