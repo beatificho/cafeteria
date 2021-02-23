@@ -1270,7 +1270,7 @@ spec:
     requests:
       storage: 1Gi
 ```
-drink deployment를 삭제하고 재기동해도 log는 삭제되지 않는다.
+point deployment를 삭제하고 재기동해도 log는 삭제되지 않는다.
 
 ```
 $ kubectl delete -f point/kubernetes/deployment.yml
