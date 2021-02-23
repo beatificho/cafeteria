@@ -94,6 +94,13 @@ phases:
                       timeoutSeconds: 2
                       periodSeconds: 5
                       failureThreshold: 5
+                    volumeMounts:
+                    - name: logs
+                      mountPath: /logs
+                volumes:
+                - name: logs
+                  persistentVolumeClaim:
+                    claimName: logs
           EOF
 cache:
   paths:
