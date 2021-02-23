@@ -755,40 +755,55 @@ spec:
 ## Self Healing
 livenessProbe를 설정하여 문제가 있을 경우 스스로 재기동 되도록 한다.
 ```	  
-# mongodb down
-$ helm delete my-mongodb --namespace mongodb
-release "my-mongodb" uninstalled
+# mariadb down
+$ helm delete my-mariadb --namespace mariadb
+release "my-mariadb" uninstalled
 
-# mongodb start
-$ helm install my-mongodb bitnami/mongodb --namespace mongodb -f values.yaml
+# mariadb start
+$ helm install my-mariadb bitnami/mariadb-galera --namespace mariadb -f values.yaml
 
-# mongodb를 사용하는 customercenter 서비스가 liveness에 실패하여 재기동하고 새롭게 시작한 mongo db에 접속한다. 
+# mariadb를 사용하는 point 서비스가 liveness에 실패하여 재기동하고 새롭게 시작한 maria db에 접속한다. 
 
-$ kubectl describe pods customercenter-7f57cf5f9f-csp2b
+$ kubectl describe pods point-55b4dc964d-2crld
 :
 Events:
-  Type     Reason     Age                   From     Message
-  ----     ------     ----                  ----     -------
-  Normal   Killing    12m (x2 over 6h21m)   kubelet  Container customercenter failed liveness probe, will be restarted
-  Normal   Pulling    12m (x3 over 20h)     kubelet  Pulling image "beatific/customercenter:v6"
-  Normal   Created    12m (x3 over 20h)     kubelet  Created container customercenter
-  Normal   Started    12m (x3 over 20h)     kubelet  Started container customercenter
-  Normal   Pulled     12m (x3 over 20h)     kubelet  Successfully pulled image "beatific/customercenter:v6"
-  Warning  Unhealthy  11m (x30 over 20h)    kubelet  Readiness probe failed: Get http://10.64.1.29:8080/actuator/health: dial tcp 10.64.1.29:8080: connect: connection refused
-  Warning  Unhealthy  11m (x17 over 6h21m)  kubelet  Readiness probe failed: Get http://10.64.1.29:8080/actuator/health: net/http: request canceled (Client.Timeout exceeded while awaiting headers)
-  Warning  Unhealthy  14s                   kubelet  Readiness probe failed: HTTP probe failed with statuscode: 503
-  Warning  Unhealthy  11s (x13 over 6h21m)  kubelet  Liveness probe failed: Get http://10.64.1.29:8080/actuator/health: net/http: request canceled (Client.Timeout exceeded while awaiting headers)
-  
+  Type     Reason     Age               From                                                        Message
+  ----     ------     ----              ----                                                        -------
+  Normal   Scheduled  53m               default-scheduler                                           Successfully assigned cafeteria/point-55b4dc964d-2crld to ip-192-168-32-134.ap-northeast-2.compute.internal
+  Warning  Unhealthy  5m (x5 over 6m)   kubelet, ip-192-168-32-134.ap-northeast-2.compute.internal  Liveness probe failed: Get http://192.168.39.137:8080/actuator/health: net/http: request canceled (Client.Timeout exceeded while awaiting headers)
+  Normal   Killing    5m                kubelet, ip-192-168-32-134.ap-northeast-2.compute.internal  Container point failed liveness probe, will be restarted
+  Warning  Unhealthy  5m (x6 over 6m)   kubelet, ip-192-168-32-134.ap-northeast-2.compute.internal  Readiness probe failed: Get http://192.168.39.137:8080/actuator/health: net/http: request canceled (Client.Timeout exceeded while awaiting headers)
+  Normal   Pulling    5m (x3 over 53m)  kubelet, ip-192-168-32-134.ap-northeast-2.compute.internal  Pulling image "496278789073.dkr.ecr.ap-northeast-2.amazonaws.com/skteam04/point:v5"
+  Normal   Created    5m (x3 over 53m)  kubelet, ip-192-168-32-134.ap-northeast-2.compute.internal  Created container point
+  Normal   Started    5m (x3 over 53m)  kubelet, ip-192-168-32-134.ap-northeast-2.compute.internal  Started container point
+  Normal   Pulled     5m (x3 over 53m)  kubelet, ip-192-168-32-134.ap-northeast-2.compute.internal  Successfully pulled image "496278789073.dkr.ecr.ap-northeast-2.amazonaws.com/skteam04/point:v5"
+  Warning  Unhealthy  5m (x6 over 53m)  kubelet, ip-192-168-32-134.ap-northeast-2.compute.internal  Readiness probe failed: Get http://192.168.39.137:8080/actuator/health: dial tcp 192.168.39.137:8080: connect: connection refused
+  Warning  BackOff    1m (x17 over 5m)  kubelet, ip-192-168-32-134.ap-northeast-2.compute.internal  Back-off restarting failed container
 $ kubectl get pods -w
-NAME                              READY   STATUS    RESTARTS   AGE
-customercenter-7f57cf5f9f-csp2b   1/1     Running   0          20h
-drink-7cb565cb4-d2vwb             1/1     Running   0          59m
-gateway-5dd866cbb6-czww9          1/1     Running   0          3d1h
-order-595c9b45b9-xppbf            1/1     Running   0          58m
-payment-698bfbdf7f-vp5ft          1/1     Running   0          24m
-siege-5b99b44c9c-8qtpd            1/1     Running   0          3d1h
-customercenter-7f57cf5f9f-csp2b   0/1     Running   1          20h
-customercenter-7f57cf5f9f-csp2b   1/1     Running   1          20h
+NAME                             READY     STATUS    RESTARTS   AGE
+customercenter-54cf98c78-qq5kg   1/1       Running   0          16h
+drink-dcd7d598-vc8z4             1/1       Running   0          17h
+gateway-54b895b5f6-bchbn         1/1       Running   0          17h
+order-98fb9d9bf-vhn2d            1/1       Running   0          3h
+payment-5f77c97c67-jmzmm         1/1       Running   0          18h
+point-55b4dc964d-2crld           1/1       Running   0          47m
+siege-5b99b44c9c-ldf2l           1/1       Running   0          1d
+point-55b4dc964d-2crld   0/1       Running   1         47m
+point-55b4dc964d-2crld   0/1       Error     1         48m
+point-55b4dc964d-2crld   0/1       Running   2         48m
+point-55b4dc964d-2crld   0/1       Error     2         48m
+point-55b4dc964d-2crld   0/1       CrashLoopBackOff   2         48m
+point-55b4dc964d-2crld   0/1       Running   3         48m
+point-55b4dc964d-2crld   0/1       Error     3         49m
+point-55b4dc964d-2crld   0/1       CrashLoopBackOff   3         49m
+point-55b4dc964d-2crld   0/1       Running   4         49m
+point-55b4dc964d-2crld   0/1       Error     4         50m
+point-55b4dc964d-2crld   0/1       CrashLoopBackOff   4         50m
+point-55b4dc964d-2crld   0/1       Running   5         50m
+point-55b4dc964d-2crld   0/1       Error     5         51m
+point-55b4dc964d-2crld   0/1       CrashLoopBackOff   5         51m
+point-55b4dc964d-2crld   0/1       Running   6         52m
+point-55b4dc964d-2crld   1/1       Running   6         53m
 
 ```
 
@@ -815,7 +830,7 @@ customercenter-7f57cf5f9f-csp2b   1/1     Running   1          20h
 
 feign:
   hystrix:
-    enabled: false 
+    enabled: true 
 
 hystrix:
   command:
@@ -837,12 +852,10 @@ hystrix:
 
 - 피호출 서비스(결제:payment) 의 임의 부하 처리 - 400 밀리에서 증감 220 밀리 정도 왔다갔다 하게
 ```
-# (payment) Payment.java (Entity)
+# (point) PointController.java (Entity)
 
-    @PrePersist
-    public void onPrePersist(){  //결제이력을 저장한 후 적당한 시간 끌기
-
-        :
+    @PatchMapping("/cancelPoint")
+	public void cancelPoint(@RequestBody OrderCanceled orderCanceled) {
         
         try {
             Thread.currentThread().sleep((long) (400 + Math.random() * 220));
@@ -1062,33 +1075,6 @@ Shortest transaction:	        0.04
 
 ```
 
-## 모니터링
-모니터링을 위하여 monitor namespace에 Prometheus와 Grafana를 설치하였다.
-
-```
-$ kubectl get deploy -n monitor
-NAME                                  READY   UP-TO-DATE   AVAILABLE   AGE
-cafe-grafana                          1/1     1            1           2d
-cafe-kube-prometheus-stack-operator   1/1     1            1           2d
-cafe-kube-state-metrics               1/1     1            1           2d
-```
-grafana 접근을 위해서 grafana의 Service는 LoadBalancer로 생성하였다.
-```
-$ kubectl get svc -n monitor
-NAME                                      TYPE           CLUSTER-IP       EXTERNAL-IP                                                                    PORT(S)                      AGE
-alertmanager-operated                     ClusterIP      None             <none>                                                                         9093/TCP,9094/TCP,9094/UDP   9h
-cafe-grafana                              ClusterIP      10.100.179.228   <none>                                                                         80/TCP                       9h
-cafe-grafana-ex                           LoadBalancer   10.100.108.223   a9b197a76a33a439b93a3708952f6f9a-1551287323.ap-northeast-2.elb.amazonaws.com   80:31391/TCP                 9h
-cafe-kube-prometheus-stack-alertmanager   ClusterIP      10.100.15.211    <none>                                                                         9093/TCP                     9h
-cafe-kube-prometheus-stack-operator       ClusterIP      10.100.212.34    <none>                                                                         443/TCP                      9h
-cafe-kube-prometheus-stack-prometheus     ClusterIP      10.100.91.250    <none>                                                                         9090/TCP                     9h
-cafe-kube-state-metrics                   ClusterIP      10.100.91.69     <none>                                                                         8080/TCP                     9h
-cafe-prometheus-node-exporter             ClusterIP      10.100.16.9      <none>                                                                         9100/TCP                     9h
-prometheus-operated                       ClusterIP      None             <none>                                                                         9090/TCP                     9h
-```
-![image](https://user-images.githubusercontent.com/75828964/108602078-625d8a80-73e3-11eb-9517-486c2b5bd584.png)
-![image](https://user-images.githubusercontent.com/75828964/108602105-89b45780-73e3-11eb-9bdc-268c1f929511.png)
-
 ## 무정지 재배포
 
 * 먼저 무정지 재배포가 100% 되는 것인지 확인하기 위해서 Autoscaler 이나 CB 설정을 제거함
@@ -1305,55 +1291,52 @@ drwxr-xr-x    3 root     root          4096 Feb 19 17:34 work
 ```
 
 ## ConfigMap / Secret
-mongo db의 database이름과 username, password는 환경변수를 지정해서 사용핳 수 있도록 하였다.
+maria db의 database이름과 username, password는 환경변수를 지정해서 사용핳 수 있도록 하였다.
 database 이름은 kubernetes의 configmap을 사용하였고 username, password는 secret을 사용하여 지정하였다.
 
 ```
 # secret 생성
-kubectl create secret generic mongodb --from-literal=username=mongodb --from-literal=password=mongodb --namespace cafeteria
+kubectl create secret generic mariadb --from-literal=username=mariadb --from-literal=password=mariadb --namespace cafeteria
 
 # configmap.yaml
 
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: mongodb
+  name: mariadb
   namespace: cafeteria
 data:
   database: "cafeteria"
   
-
 # application.yml
 
 spring:
-  data:
-    mongodb:
-      uri: mongodb://my-mongodb-0.my-mongodb-headless.mongodb.svc.cluster.local:27017,my-mongodb-1.my-mongodb-headless.mongodb.svc.cluster.local:27017
-      database: ${MONGODB_DATABASE}
-      username: ${MONGODB_USERNAME}
-      password: ${MONGODB_PASSWORD}
+  datasource:
+    url: jdbc:mariadb://my-mariadb-mariadb-galera.mariadb.svc.cluster.local:3306/${MARIADB_DATABASE}
+    driver-class-name: org.mariadb.jdbc.Driver
+    username: ${MARIADB_USERNAME}
+    password: ${MARIADB_PASSWORD} 
 
 #buildspec.yaml
-spec:
-containers:
-  - name: $_PROJECT_NAME
-    image: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$_PROJECT_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION
-    ports:
-    - containerPort: 8080
-    env:
-    - name: MONGODB_DATABASE
-      valueFrom:
-	configMapKeyRef:
-	  name: mongodb
-	  key: database
-    - name: MONGODB_USERNAME
-      valueFrom:
-	secretKeyRef:
-	  name: mongodb
-	  key: username
-    - name: MONGODB_PASSWORD
-      valueFrom:
-	secretKeyRef:
-	  name: mongodb
-	  key: password
+
+      spec:
+	containers:
+	    env:
+	      - name: SPRING_PROFILES_ACTIVE
+		value: "docker"
+	      - name: MARIADB_DATABASE
+		valueFrom:
+		  configMapKeyRef:
+		    name: mariadb 
+		    key: database
+	      - name: MARIADB_USERNAME
+		valueFrom:
+		  secretKeyRef:
+		    name: mariadb
+		    key: username
+	      - name: MARIADB_PASSWORD
+		valueFrom:
+		  secretKeyRef:
+		    name: mariadb 
+		    key: password
 ```
