@@ -15,40 +15,47 @@ spec:
         app: point
     spec:
       containers:
-        - name: point
-          image: 496278789073.dkr.ecr.ap-northeast-2.amazonaws.com/skteam04/point:v2
-          imagePullPolicy: Always
-          ports:
-          - containerPort: 8080
-          env:
-          - name: MARIADB_DATABASE
-            valueFrom:
-              configMapKeyRef:
-                name: mariadb
-                key: database
-          - name: MARIADB_USERNAME
-            valueFrom:
-              secretKeyRef:
-                name: mariadb
-                key: username
-          - name: MARIADB_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: mariadb
-                key: password
-          readinessProbe:
-            httpGet:
-              path: '/actuator/health'
-              port: 8080
-            initialDelaySeconds: 10
-            timeoutSeconds: 2
-            periodSeconds: 5
-            failureThreshold: 10
-          livenessProbe:
-            httpGet:
-              path: '/actuator/health'
-              port: 8080
-            initialDelaySeconds: 120
-            timeoutSeconds: 2
-            periodSeconds: 5
-            failureThreshold: 5
+      - name: point
+        image: 496278789073.dkr.ecr.ap-northeast-2.amazonaws.com/skteam04/point:v2
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        env:
+        - name: MARIADB_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: mariadb
+              key: database
+        - name: MARIADB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mariadb
+              key: username
+        - name: MARIADB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mariadb
+              key: password
+        readinessProbe:
+          httpGet:
+            path: '/actuator/health'
+            port: 8080
+          initialDelaySeconds: 10
+          timeoutSeconds: 2
+          periodSeconds: 5
+          failureThreshold: 10
+        livenessProbe:
+          httpGet:
+            path: '/actuator/health'
+            port: 8080
+          initialDelaySeconds: 120
+          timeoutSeconds: 2
+          periodSeconds: 5
+          failureThreshold: 5
+        volumeMounts:
+        - name: logs
+          mountPath: /logs
+      volumes:
+      - name: logs
+        persistentVolumeClaim:
+          claimName: point-logs

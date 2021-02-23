@@ -17,6 +17,13 @@ public class PointController {
 	
 	@PatchMapping("/cancelPoint")
 	public void cancelPoint(@RequestBody OrderCanceled orderCanceled) {
+		
+//		try {
+//            Thread.currentThread().sleep((long) (400 + Math.random() * 220));
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+		
 		List<Point> points = pointRepository.findByPhoneNumber(orderCanceled.getPhoneNumber());
 		int p = (int)(orderCanceled.getAmt() * 0.1);
 		Point point = points.get(0);
