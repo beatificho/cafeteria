@@ -1279,17 +1279,13 @@ deployment.apps "point" deleted
 $ kubectl apply -f drink/kubernetes/deployment.yml
 deployment.apps/point created
 
-$ kubectl exec -it drink-7cb565cb4-8c7pq -- /bin/sh
-/ # ls -l /logs/point/
-total 5568
-drwxr-xr-x    2 root     root          4096 Feb 20 00:00 logs
--rw-r--r--    1 root     root       4626352 Feb 20 16:34 spring.log
--rw-r--r--    1 root     root        177941 Feb 20 08:17 spring.log.2021-02-19.0.gz
--rw-r--r--    1 root     root        235383 Feb 20 15:48 spring.log.2021-02-20.0.gz
--rw-r--r--    1 root     root        210417 Feb 20 15:55 spring.log.2021-02-20.1.gz
--rw-r--r--    1 root     root        214386 Feb 20 15:55 spring.log.2021-02-20.2.gz
--rw-r--r--    1 root     root        214686 Feb 20 16:01 spring.log.2021-02-20.3.gz
-drwxr-xr-x    3 root     root          4096 Feb 19 17:34 work
+$ kubectl exec -it point-598d96c945-46ds9 -- /bin/sh
+
+/logs/point # ls -ltr
+total 64
+drwxr-xr-x    3 root     root            20 Feb 23 09:06 work
+drwxr-xr-x    2 root     root            39 Feb 23 09:06 logs
+-rw-r--r--    1 root     root         63360 Feb 23 09:06 spring.log
 
 ```
 
