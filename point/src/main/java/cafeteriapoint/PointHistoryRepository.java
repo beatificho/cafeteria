@@ -9,5 +9,7 @@ public interface PointHistoryRepository extends CrudRepository<PointHistory, Lon
 
     List<PointHistory> findByPaymentId(Long paymentId);
     List<PointHistory> findByOrderId(Long orderId);
+    
+    List<PointHistory> findByPhoneNumberOrderByCreationTime(String phoneNumber);
 
 }

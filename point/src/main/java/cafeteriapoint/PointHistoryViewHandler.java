@@ -51,6 +51,7 @@ public class PointHistoryViewHandler {
                 history.setPoint(p);
                 history.setType("Order");
                 history.setTotalPoint(point.getPoint());
+                history.setPhoneNumber(paymentApproved.getPhoneNumber());
                 history.setCreateTime(new Date());
                 // view 레파지 토리에 save
                 pointHistoryRepository.save(history);
@@ -80,6 +81,7 @@ public class PointHistoryViewHandler {
                 history.setOrderId(paymentCanceled.getOrderId());
                 history.setPaymentId(paymentCanceled.getId());
                 history.setAmt(paymentCanceled.getAmt());
+                history.setPhoneNumber(paymentCanceled.getPhoneNumber());
                 history.setPoint(p * -1);
                 history.setType("Cancel");
                 history.setProductName(beforeHistory.getProductName());

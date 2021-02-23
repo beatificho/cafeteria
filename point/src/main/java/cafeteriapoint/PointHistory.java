@@ -23,6 +23,7 @@ public class PointHistory {
         private String productName;
         private String type;
         private Integer totalPoint;
+        private String phoneNumber;
         private Date createTime;
 
 
@@ -96,5 +97,13 @@ public class PointHistory {
         public void setCreateTime(Date createTime) {
             this.createTime = createTime;
         }
+
+		public String getPhoneNumber() {
+			return phoneNumber;
+		}
+
+		public void setPhoneNumber(String phoneNumber) {
+			this.phoneNumber = phoneNumber;
+		}
 
 }
