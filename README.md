@@ -1042,65 +1042,25 @@ Shortest transaction:	        0.04
 
 - seige 로 배포작업 직전에 워크로드를 모니터링 함.
 ```
-# siege -v -c100 -t60s --content-type "application/json" 'http://order:8080/orders POST {"phoneNumber":"01087654321", "productName":"coffee", "qty":2, "amt":1000}'
+root@siege-5b99b44c9c-ldf2l:/#  siege -v -c100 -t120s http://point:8080/pointHistories/search/findByPhoneNumberOrderByCreateTime?phoneNumber="01012345678"
 ** SIEGE 4.0.4
 ** Preparing 100 concurrent users for battle.
 The server is now under siege...
-HTTP/1.1 201     0.20 secs:     321 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     0.34 secs:     321 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     0.39 secs:     321 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     0.38 secs:     321 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     0.40 secs:     321 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     0.40 secs:     321 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     0.40 secs:     321 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     0.41 secs:     321 bytes ==> POST http://order:8080/orders
+HTTP/1.1 200     0.04 secs:     696 bytes ==> GET  /pointHistories/search/findByPhoneNumberOrderByCreateTime?phoneNumber=01012345678
+HTTP/1.1 200     0.05 secs:     696 bytes ==> GET  /pointHistories/search/findByPhoneNumberOrderByCreateTime?phoneNumber=01012345678
+HTTP/1.1 200     0.05 secs:     696 bytes ==> GET  /pointHistories/search/findByPhoneNumberOrderByCreateTime?phoneNumber=01012345678
+HTTP/1.1 200     0.05 secs:     696 bytes ==> GET  /pointHistories/search/findByPhoneNumberOrderByCreateTime?phoneNumber=01012345678
+HTTP/1.1 200     0.08 secs:     696 bytes ==> GET  /pointHistories/search/findByPhoneNumberOrderByCreateTime?phoneNumber=01012345678
+HTTP/1.1 200     0.09 secs:     696 bytes ==> GET  /pointHistories/search/findByPhoneNumberOrderByCreateTime?phoneNumber=01012345678
 :
 
 ```
 
 - 새버전으로의 배포 시작
 
-```
-order version
 
-v1 : default version 
-v3 : circuit breaker version 
-v4 : default version
-v6 : graceful shutdown version
-```
-- 쿠버네티스가 성급하게 새로 올려진 서비스를 READY 상태로 인식하여 서비스 유입을 진행할 수 있기 때문에 이를 막기위해 Readiness Probe 를 설정하여 이미지를 배포
-```
-$ kubectl set image deployment/order order=496278789073.dkr.ecr.ap-northeast-2.amazonaws.com/skteam04/order:v4
-deployment.apps/order image updated
-```
+- 쿠버네티스가 성급하게 새로 올려진 서비스를 READY 상태로 인식하여 서비스 유입을 진행할 수 있기 때문에 이를 막기위해 Readiness Probe를 설정하고 성급하게 기존 서비스의 처리 중 종료를 막기위해 Graceful Shutdown을 적용
 
-```
-# deployment.yaml 의 readiness probe 의 설정:
-
-kubectl apply -f kubernetes/deployment.yaml
-```
-- 재배포 한 후 Availability 확인:
-```
-root@siege-5b99b44c9c-ldf2l:/# siege -v -c100 -t60s --content-type "application/json" 'http://order:8080/orders POST {"phoneNumber":"01087654321", "productName":"coffee", "qty":2, "amt":1000}'
-** SIEGE 4.0.4
-** Preparing 100 concurrent users for battle.
-The server is now under siege...
-Lifting the server siege...
-Transactions:		        4300 hits
-Availability:		       99.79 %
-Elapsed time:		       59.08 secs
-Data transferred:	        1.33 MB
-Response time:		        1.05 secs
-Transaction rate:	       72.78 trans/sec
-Throughput:		        0.02 MB/sec
-Concurrency:		       76.67
-Successful transactions:        4300
-Failed transactions:	           9
-Longest transaction:	        4.07
-Shortest transaction:	        0.03
-```
-
-배포기간중 Availability 가 99.79% 대로 떨어지는 것을 확인. 원인은 쿠버네티스가 성급하게 기존 서비스의 처리 중 종료했기 때문. 이를 막기위해 Graceful Shutdown을 적용
 ```
 # Graceful Shutdown 적용 
 public class TomcatGracefulShutdown implements TomcatConnectorCustomizer, ApplicationListener<ContextClosedEvent> {
@@ -1139,27 +1099,27 @@ public class TomcatGracefulShutdown implements TomcatConnectorCustomizer, Applic
 
 }
 ```
+- 부하를 발생시키고 배포 한 후 Availability 확인:
 
-- 동일한 시나리오로 재배포 한 후 Availability 확인:
 ```
-root@siege-5b99b44c9c-ldf2l:/# siege -v -c100 -t60s --content-type "application/json" 'http://order:8080/orders POST {"phoneNumber":"01087654321", "productName":"coffee", "qty":2, "amt":1000}'
+root@siege-5b99b44c9c-ldf2l:/#  siege -v -c100 -t120s http://point:8080/pointHistories/search/findByPhoneNumberOrderByCreateTime?phoneNumber="01012345678"
 ** SIEGE 4.0.4
 ** Preparing 100 concurrent users for battle.
 The server is now under siege...
+:
 Lifting the server siege...
-Transactions:		        5261 hits
+Transactions:		       43045 hits
 Availability:		      100.00 %
-Elapsed time:		       59.28 secs
-Data transferred:	        1.62 MB
-Response time:		        1.09 secs
-Transaction rate:	       88.75 trans/sec
-Throughput:		        0.03 MB/sec
-Concurrency:		       97.08
-Successful transactions:        5261
+Elapsed time:		      119.74 secs
+Data transferred:	       28.57 MB
+Response time:		        0.28 secs
+Transaction rate:	      359.49 trans/sec
+Throughput:		        0.24 MB/sec
+Concurrency:		       99.69
+Successful transactions:       43045
 Failed transactions:	           0
-Longest transaction:	        7.52
-Shortest transaction:	        0.01
-
+Longest transaction:	        4.28
+Shortest transaction:	        0.00
 ```
 
 배포기간 동안 Availability 가 변화없기 때문에 무정지 재배포가 성공한 것으로 확인됨.
@@ -1176,10 +1136,10 @@ server:
     accesslog:
       enabled: true
       pattern:  '%h %l %u %t "%r" %s %bbyte %Dms'
-    basedir: /logs/drink
+    basedir: /logs/point
 
 logging:
-  path: /logs/drink
+  path: /logs/point
   file:
     max-history: 30
   level:
@@ -1204,7 +1164,7 @@ spec:
   template:
     metadata:
       labels:
-        app: drink
+        app: point
     spec:
       containers:
       - name: point
