@@ -1018,10 +1018,10 @@ Events:
   Type     Reason     Age                   From     Message
   ----     ------     ----                  ----     -------
   Normal   Killing    12m (x2 over 6h21m)   kubelet  Container customercenter failed liveness probe, will be restarted
-  Normal   Pulling    12m (x3 over 20h)     kubelet  Pulling image "beatific/customercenter:v6"
+  Normal   Pulling    12m (x3 over 20h)     kubelet  Pulling image "496278789073.dkr.ecr.ap-northeast-2.amazonaws.com/skteam04/customercenter:v1"
   Normal   Created    12m (x3 over 20h)     kubelet  Created container customercenter
   Normal   Started    12m (x3 over 20h)     kubelet  Started container customercenter
-  Normal   Pulled     12m (x3 over 20h)     kubelet  Successfully pulled image "beatific/customercenter:v6"
+  Normal   Pulled     12m (x3 over 20h)     kubelet  Successfully pulled image "496278789073.dkr.ecr.ap-northeast-2.amazonaws.com/skteam04/customercenter:v1"
   Warning  Unhealthy  11m (x30 over 20h)    kubelet  Readiness probe failed: Get http://10.64.1.29:8080/actuator/health: dial tcp 10.64.1.29:8080: connect: connection refused
   Warning  Unhealthy  11m (x17 over 6h21m)  kubelet  Readiness probe failed: Get http://10.64.1.29:8080/actuator/health: net/http: request canceled (Client.Timeout exceeded while awaiting headers)
   Warning  Unhealthy  14s                   kubelet  Readiness probe failed: HTTP probe failed with statuscode: 503
@@ -1539,16 +1539,12 @@ $ kubectl apply -f drink/kubernetes/deployment.yml
 deployment.apps/drink created
 
 $ kubectl exec -it drink-7cb565cb4-8c7pq -- /bin/sh
-/ # ls -l /logs/drink/
-total 5568
-drwxr-xr-x    2 root     root          4096 Feb 20 00:00 logs
--rw-r--r--    1 root     root       4626352 Feb 20 16:34 spring.log
--rw-r--r--    1 root     root        177941 Feb 20 08:17 spring.log.2021-02-19.0.gz
--rw-r--r--    1 root     root        235383 Feb 20 15:48 spring.log.2021-02-20.0.gz
--rw-r--r--    1 root     root        210417 Feb 20 15:55 spring.log.2021-02-20.1.gz
--rw-r--r--    1 root     root        214386 Feb 20 15:55 spring.log.2021-02-20.2.gz
--rw-r--r--    1 root     root        214686 Feb 20 16:01 spring.log.2021-02-20.3.gz
-drwxr-xr-x    3 root     root          4096 Feb 19 17:34 work
+/logs/drink # ls -ltr
+total 868
+drwxr-xr-x    3 root     root            20 Feb 22 14:21 work
+drwxr-xr-x    2 root     root            72 Feb 23 00:00 logs
+-rw-r--r--    1 root     root          9454 Feb 23 04:03 spring.log.2021-02-22.0.gz
+-rw-r--r--    1 root     root        875371 Feb 23 07:27 spring.log
 
 ```
 
