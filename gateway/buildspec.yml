@@ -76,7 +76,7 @@ phases:
               spec:
                 containers:
                   - name: $_PROJECT_NAME
-                    image: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/skteam04/$_PROJECT_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION
+                    image: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/beatifcho/$_PROJECT_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION
                     ports:
                       - containerPort: 8080
           EOF
