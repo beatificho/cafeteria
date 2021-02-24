@@ -827,19 +827,18 @@ root@siege-5b99b44c9c-br928:/sh# siege -v -c10 -t60s --content-type "application
 ** Preparing 100 concurrent users for battle.
 The server is now under siege...
 Lifting the server siege...
-Lifting the server siege...
-Transactions:		        6636 hits
+Transactions:		        6719 hits
 Availability:		      100.00 %
-Elapsed time:		       59.29 secs
-Data transferred:	        2.04 MB
+Elapsed time:		       59.84 secs
+Data transferred:	        2.07 MB
 Response time:		        0.09 secs
-Transaction rate:	      111.92 trans/sec
+Transaction rate:	      112.28 trans/sec
 Throughput:		        0.03 MB/sec
-Concurrency:		        9.96
-Successful transactions:        6636
+Concurrency:		        9.97
+Successful transactions:        6719
 Failed transactions:	           0
-Longest transaction:	        0.46
-Shortest transaction:	        0.01
+Longest transaction:	        1.99
+Shortest transaction:	        0.00
 
 ```
 
@@ -863,7 +862,7 @@ done
 ```
 
 ```
-root@siege-5b99b44c9c-br928:/sh# siege -f urls -v -c 100 --content-type "application/json"
+root@siege-5b99b44c9c-br928:/sh# siege -f urls -v -c 50 -t60s --content-type "application/json"
 ** SIEGE 4.0.4
 ** Preparing 100 concurrent users for battle.
 The server is now under siege...
@@ -902,7 +901,7 @@ HTTP/1.1 200     0.65 secs:     327 bytes ==> PATCH http://order:8080/orders/842
 HTTP/1.1 200     3.65 secs:     329 bytes ==> PATCH http://order:8080/orders/1581
 ...
 
-Transactions:		         513 hits
+Transactions:		        1636 hits
 Availability:		       31.36 %
 Elapsed time:		       29.59 secs
 Data transferred:	        0.17 MB
@@ -938,68 +937,60 @@ $ kubectl autoscale deploy point --min=1 --max=10 --cpu-percent=15
 horizontalpodautoscaler.autoscaling/point autoscaled
 
 $ kubectl get hpa
-NAME      REFERENCE            TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
-payment   Deployment/payment   2%/15%    1         10        1          2m35s
+NAME      REFERENCE          TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
+point     Deployment/point   3%/15%    1         10        1          10m
 
 # CB 에서 했던 방식대로 워크로드를 1분 동안 걸어준다.
 
-root@siege-5b99b44c9c-ldf2l:/# siege -v -c100 -t60s --content-type "application/json" 'http://order:8080/orders POST {"phoneNumber":"01087654321", "productName":"coffee", "qty":2, "amt":1000}'
+root@siege-5b99b44c9c-ldf2l:/# siege -v -c50 -t60s --content-type "application/json" 'http://order:8080/orders POST {"phoneNumber":"01087654321", "productName":"coffee", "qty":2, "amt":1000}'
 ** SIEGE 4.0.4
 ** Preparing 100 concurrent users for battle.
 The server is now under siege...
 
-$ kubectl get pods
-NAME                              READY     STATUS    RESTARTS   AGE
-customercenter-59f4d6d897-lnpsh   1/1       Running   0          97m
-drink-64bc64d49c-sdwlb            1/1       Running   0          112m
-gateway-6dcdf4cb9-pghzz           1/1       Running   0          74m
-order-7ff9b5458-4wn28             1/1       Running   2          21m
-payment-6f75856f77-b6ctw          1/1       Running   0          118s
-payment-6f75856f77-f2l5m          1/1       Running   0          102s
-payment-6f75856f77-gl24n          1/1       Running   0          41m
-payment-6f75856f77-htkn5          1/1       Running   0          118s
-payment-6f75856f77-rplpb          1/1       Running   0          118s
-siege-5b99b44c9c-ldf2l            1/1       Running   0          96m
 ```
 
 - HPA를 확인한다.
 ```
-$ kubectl get hpa 
-NAME      REFERENCE            TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
-payment   Deployment/payment   72%/15%   1         10        5          12m
+$ kubectl get hpa
+NAME      REFERENCE          TARGETS    MINPODS   MAXPODS   REPLICAS   AGE
+point     Deployment/point   228%/15%   1         10        10         14m
 ```
 
 - 오토스케일이 어떻게 되고 있는지 모니터링을 걸어둔다:
 ```
-kubectl get deploy payment -w
+kubectl get deploy point -w
 ```
 - 어느정도 시간이 흐른 후 (약 30초) 스케일 아웃이 벌어지는 것을 확인할 수 있다:
 ```
 NAME      DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
-payment   1         1         1         1         1h
-payment   4         1         1         1         1h
-payment   4         1         1         1         1h
-payment   4         1         1         1         1h
-payment   4         4         4         1         1h
-payment   5         4         4         1         1h
-payment   5         4         4         1         1h
-payment   5         4         4         1         1h
-payment   5         5         5         1         1h
+point     1         1         1            1           10h
+point     4         1         1         1         10h
+point     4         1         1         1         10h
+point     4         1         1         1         10h
+point     4         4         4         1         10h
+point     8         4         4         1         10h
+point     8         4         4         1         10h
+point     8         4         4         1         10h
+point     8         8         8         1         10h
+point     10        8         8         1         10h
+point     10        8         8         1         10h
+point     10        8         8         1         10h
+point     10        10        10        1         10h
 
 # siege 의 로그를 보아도 전체적인 성공률이 높아진 것을 확인 할 수 있다. 
 
-Transactions:		         900 hits
-Availability:		       76.08 %
-Elapsed time:		       59.33 secs
+Transactions:		        1407 hits
+Availability:		       70.08 %
+Elapsed time:		       59.38 secs
 Data transferred:	        0.34 MB
-Response time:		        6.14 secs
+Response time:		        4.14 secs
 Transaction rate:	       15.17 trans/sec
-Throughput:		        0.01 MB/sec
-Concurrency:		       93.08
-Successful transactions:         900
+Throughput:		        0.12 MB/sec
+Concurrency:		       45.08
+Successful transactions:        1124
 Failed transactions:	         283
-Longest transaction:	       14.41
-Shortest transaction:	        0.04
+Longest transaction:	       16.41
+Shortest transaction:	        0.05
 
 ```
 
