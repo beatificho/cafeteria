@@ -261,7 +261,7 @@ spring:
         - id: point
           uri: http://point:8080
           predicates:
-            - Path= /points/**
+            - Path= /points/**,/pointHistories/**
 
 # service.yaml
 apiVersion: v1
@@ -785,7 +785,7 @@ point-55b4dc964d-2crld   1/1       Running   6         53m
 
 * 서킷 브레이킹 프레임워크의 선택: Spring FeignClient + Hystrix 옵션을 사용하여 구현함
 
-시나리오는 단말앱(order)-->결제(payment) 호출 시의 연결을 RESTful Request/Response 로 연동하여 구현이 되어있고, 결제 요청이 과도할 경우 CB 를 통하여 장애격리.
+시나리오는 주문(order)-->포인트(point) 호출 시의 연결을 RESTful Request/Response 로 연동하여 구현이 되어있고, 결제 요청이 과도할 경우 CB 를 통하여 장애격리.
 
 - Hystrix 를 설정:  요청처리 쓰레드에서 처리시간이 610 밀리가 넘어서기 시작하여 어느정도 유지되면 CB 회로가 닫히도록 (요청을 빠르게 실패처리, 차단) 설정
 ```
@@ -797,19 +797,11 @@ feign:
 
 hystrix:
   command:
-    default:
+    point: #payment의 경우 timeout 610ms에 걸리지 않도록 point service만 등록
       execution:
         isolation:
-          strategy: THREAD
           thread:
             timeoutInMilliseconds: 610         #설정 시간동안 처리 지연발생시 timeout and 설정한 fallback 로직 수행     
-      circuitBreaker:
-        requestVolumeThreshold: 20           # 설정수 값만큼 요청이 들어온 경우만 circut open 여부 결정 함
-        errorThresholdPercentage: 30        # requestVolumn값을 넘는 요청 중 설정 값이상 비율이 에러인 경우 circuit open
-        sleepWindowInMilliseconds: 5000    # 한번 오픈되면 얼마나 오픈할 것인지 
-      metrics:
-        rollingStats:
-          timeInMilliseconds: 10000   
 
 ```
 
@@ -828,130 +820,103 @@ hystrix:
     }
 ```
 
-* 부하테스터 siege 툴을 통한 서킷 브레이커 동작 확인:
-- 동시사용자 100명
-- 60초 동안 실시
+* 부하테스트의 취소할 데이터를 만들기 위해 siege부하를 먼저 발생시킨다.
 ```
-
-root@siege-5b99b44c9c-ldf2l:/# siege -v -c100 -t60s --content-type "application/json" 'http://order:8080/orders POST {"phoneNumber":"01087654321", "productName":"coffee", "qty":2, "amt":1000}'
+root@siege-5b99b44c9c-br928:/sh# siege -v -c10 -t60s --content-type "application/json" 'http://order:8080/orders POST {"phoneNumber":"01087654321", "productName":"coffee", "qty":2, "amt":1000}'
 ** SIEGE 4.0.4
 ** Preparing 100 concurrent users for battle.
 The server is now under siege...
-HTTP/1.1 500     2.52 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     2.53 secs:     317 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     2.54 secs:     317 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     2.55 secs:     317 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     2.54 secs:     317 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     2.53 secs:     317 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     2.56 secs:     319 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     2.56 secs:     317 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     2.58 secs:     317 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     2.60 secs:     317 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     2.95 secs:     319 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     3.02 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     3.00 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     3.03 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     3.02 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     3.04 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     3.13 secs:     319 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     3.12 secs:     319 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     3.14 secs:     319 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     3.20 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     3.24 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     3.27 secs:     319 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     3.30 secs:     319 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     3.30 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     3.28 secs:     319 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     3.31 secs:     319 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     3.41 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     3.41 secs:     319 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     3.43 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     3.45 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     3.48 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     3.47 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     3.49 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     3.53 secs:     319 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     3.66 secs:     319 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     3.70 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     3.76 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     3.78 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     3.77 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     3.92 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     4.02 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     4.05 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     4.10 secs:     319 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     4.11 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     4.14 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     4.14 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     4.12 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     4.13 secs:     319 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     4.14 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     4.21 secs:     319 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     4.27 secs:     319 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     4.27 secs:     319 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     4.26 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     4.34 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     0.95 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     4.36 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     4.47 secs:     319 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     4.60 secs:     319 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     0.51 secs:     319 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     4.73 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     4.78 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     4.82 secs:     319 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     4.92 secs:     319 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     4.91 secs:     319 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     4.94 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 201     5.01 secs:     319 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     0.90 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     5.07 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     5.07 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     5.10 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     5.10 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     5.12 secs:     248 bytes ==> POST http://order:8080/orders
-HTTP/1.1 500     5.12 secs:     248 bytes ==> POST http://order:8080/orders
+Lifting the server siege...
+Lifting the server siege...
+Transactions:		        6636 hits
+Availability:		      100.00 %
+Elapsed time:		       59.29 secs
+Data transferred:	        2.04 MB
+Response time:		        0.09 secs
+Transaction rate:	      111.92 trans/sec
+Throughput:		        0.03 MB/sec
+Concurrency:		        9.96
+Successful transactions:        6636
+Failed transactions:	           0
+Longest transaction:	        0.46
+Shortest transaction:	        0.01
+
+```
+
+* 부하테스터 siege 툴을 통한 서킷 브레이커 동작 확인:
+- 동시사용자 100명
+- 취소 url의 번호가 바뀌어야 하므로 취소를 위한 파일 생성
+```
+# cat url.sh 
+count=0
+stop=$1
+while [ 1 ];
+do 
+    count=$(($count+1))
+    echo "http://order:8080/orders/$count PATCH {\"status\":\"OrderCanceled\"}"
+    if [ $count -eq $stop ]; then
+        break
+    fi
+done
+
+#url.sh 2000 > urls
+```
+
+```
+root@siege-5b99b44c9c-br928:/sh# siege -f urls -v -c 100 --content-type "application/json"
+** SIEGE 4.0.4
+** Preparing 100 concurrent users for battle.
+The server is now under siege...
+HTTP/1.1 200     1.64 secs:     327 bytes ==> PATCH http://order:8080/orders/541
+HTTP/1.1 200     1.87 secs:     327 bytes ==> PATCH http://order:8080/orders/341
+HTTP/1.1 200     2.01 secs:     327 bytes ==> PATCH http://order:8080/orders/181
+HTTP/1.1 200     2.03 secs:     327 bytes ==> PATCH http://order:8080/orders/601
+HTTP/1.1 200     2.05 secs:     327 bytes ==> PATCH http://order:8080/orders/281
+HTTP/1.1 200     2.06 secs:     327 bytes ==> PATCH http://order:8080/orders/621
+HTTP/1.1 200     2.12 secs:     327 bytes ==> PATCH http://order:8080/orders/161
+HTTP/1.1 200     2.10 secs:     329 bytes ==> PATCH http://order:8080/orders/1981
+HTTP/1.1 200     2.16 secs:     327 bytes ==> PATCH http://order:8080/orders/461
+HTTP/1.1 200     2.16 secs:     327 bytes ==> PATCH http://order:8080/orders/721
+HTTP/1.1 200     2.18 secs:     327 bytes ==> PATCH http://order:8080/orders/121
+HTTP/1.1 200     2.36 secs:     327 bytes ==> PATCH http://order:8080/orders/801
+HTTP/1.1 200     2.47 secs:     329 bytes ==> PATCH http://order:8080/orders/1621
+HTTP/1.1 200     2.55 secs:     327 bytes ==> PATCH http://order:8080/orders/901
+HTTP/1.1 200     2.55 secs:     329 bytes ==> PATCH http://order:8080/orders/1701
+HTTP/1.1 200     2.69 secs:     327 bytes ==> PATCH http://order:8080/orders/561
+HTTP/1.1 200     2.71 secs:     327 bytes ==> PATCH http://order:8080/orders/921
+HTTP/1.1 200     2.76 secs:     327 bytes ==> PATCH http://order:8080/orders/841
+HTTP/1.1 200     2.75 secs:     329 bytes ==> PATCH http://order:8080/orders/1901
+HTTP/1.1 500     2.82 secs:     252 bytes ==> PATCH http://order:8080/orders/761
+HTTP/1.1 500     2.84 secs:     253 bytes ==> PATCH http://order:8080/orders/1421
+HTTP/1.1 200     2.89 secs:     329 bytes ==> PATCH http://order:8080/orders/1241
+HTTP/1.1 200     3.12 secs:     327 bytes ==> PATCH http://order:8080/orders/441
+HTTP/1.1 200     3.22 secs:     327 bytes ==> PATCH http://order:8080/orders/521
+HTTP/1.1 200     3.24 secs:     327 bytes ==> PATCH http://order:8080/orders/261
+HTTP/1.1 500     3.25 secs:     252 bytes ==> PATCH http://order:8080/orders/221
+HTTP/1.1 200     3.26 secs:     327 bytes ==> PATCH http://order:8080/orders/481
+HTTP/1.1 200     3.24 secs:     329 bytes ==> PATCH http://order:8080/orders/1641
+HTTP/1.1 200     3.33 secs:     327 bytes ==> PATCH http://order:8080/orders/861
+HTTP/1.1 200     3.34 secs:     327 bytes ==> PATCH http://order:8080/orders/681
+HTTP/1.1 200     3.35 secs:     329 bytes ==> PATCH http://order:8080/orders/1961
+HTTP/1.1 200     0.65 secs:     327 bytes ==> PATCH http://order:8080/orders/842
+HTTP/1.1 200     3.65 secs:     329 bytes ==> PATCH http://order:8080/orders/1581
 ...
-Lifting the server siege...siege aborted due to excessive socket failure; you
-can change the failure threshold in $HOME/.siegerc
 
-Transactions:		         701 hits
-Availability:		       39.58 %
-Elapsed time:		       59.21 secs
-Data transferred:	        0.47 MB
-Response time:		        8.18 secs
-Transaction rate:	       11.84 trans/sec
+Transactions:		         513 hits
+Availability:		       31.36 %
+Elapsed time:		       29.59 secs
+Data transferred:	        0.17 MB
+Response time:		        5.14 secs
+Transaction rate:	       17.34 trans/sec
 Throughput:		        0.01 MB/sec
-Concurrency:		       96.90
-Successful transactions:         701
-Failed transactions:	        1070
-Longest transaction:	        9.81
-Shortest transaction:	        0.05
+Concurrency:		       89.19
+Successful transactions:         513
+Failed transactions:	        1123
+Longest transaction:	        9.99
+Shortest transaction:	        0.54
 ```
 
-- order 서비스의 로그를 확인하여 Circuit이 OPEN된 것을 확인한다.
-$ kubectl logs -f order-7ff9b5458-4wn28 | grep OPEN
-```
-java.lang.RuntimeException: Hystrix circuit short-circuited and is OPEN
-java.lang.RuntimeException: Hystrix circuit short-circuited and is OPEN
-java.lang.RuntimeException: Hystrix circuit short-circuited and is OPEN
-java.lang.RuntimeException: Hystrix circuit short-circuited and is OPEN
-java.lang.RuntimeException: Hystrix circuit short-circuited and is OPEN
-java.lang.RuntimeException: Hystrix circuit short-circuited and is OPEN
-java.lang.RuntimeException: Hystrix circuit short-circuited and is OPEN
-java.lang.RuntimeException: Hystrix circuit short-circuited and is OPEN
-java.lang.RuntimeException: Hystrix circuit short-circuited and is OPEN
-java.lang.RuntimeException: Hystrix circuit short-circuited and is OPEN
-java.lang.RuntimeException: Hystrix circuit short-circuited and is OPEN
-java.lang.RuntimeException: Hystrix circuit short-circuited and is OPEN
-java.lang.RuntimeException: Hystrix circuit short-circuited and is OPEN
-java.lang.RuntimeException: Hystrix circuit short-circuited and is OPEN
-java.lang.RuntimeException: Hystrix circuit short-circuited and is OPEN
-java.lang.RuntimeException: Hystrix circuit short-circuited and is OPEN
-java.lang.RuntimeException: Hystrix circuit short-circuited and is OPEN
-java.lang.RuntimeException: Hystrix circuit short-circuited and is OPEN
-```
-
-- 운영시스템은 죽지 않고 지속적으로 CB 에 의하여 적절히 회로가 열림과 닫힘이 벌어지면서 자원을 보호하고 있음을 보여줌. 하지만, 40% 가 성공하였고, 60%가 실패했다는 것은 고객 사용성에 있어 좋지 않기 때문에 Retry 설정과 동적 Scale out (replica의 자동적 추가,HPA) 을 통하여 시스템을 확장 해주는 후속처리가 필요.
+- 운영시스템은 죽지 않고 지속적으로 CB 에 의하여 적절히 회로가 열림과 닫힘이 벌어지면서 자원을 보호하고 있음을 보여줌. 하지만, 30% 가 성공하였고, 70%가 실패했다는 것은 고객 사용성에 있어 좋지 않기 때문에 Retry 설정과 동적 Scale out (replica의 자동적 추가,HPA) 을 통하여 시스템을 확장 해주는 후속처리가 필요.
 
 ### 오토스케일 아웃
 앞서 CB 는 시스템을 안정되게 운영할 수 있게 해줬지만 사용자의 요청을 100% 받아들여주지 못했기 때문에 이에 대한 보완책으로 자동화된 확장 기능을 적용하고자 한다. 
@@ -969,8 +934,8 @@ payment-698bfbdf7f-vp5ft          1/1     Running   0          2m32s
 siege-5b99b44c9c-8qtpd            1/1     Running   0          3d1h
 
 
-$ kubectl autoscale deploy payment --min=1 --max=10 --cpu-percent=15
-horizontalpodautoscaler.autoscaling/payment autoscaled
+$ kubectl autoscale deploy point --min=1 --max=10 --cpu-percent=15
+horizontalpodautoscaler.autoscaling/point autoscaled
 
 $ kubectl get hpa
 NAME      REFERENCE            TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
