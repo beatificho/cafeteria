@@ -773,11 +773,12 @@ point-55b4dc964d-2crld   1/1       Running   6         53m
 
 각 구현체들은 하나의 source repository 에 구성되었고, 사용한 CI/CD 플랫폼은 AWS를 사용하였으며, pipeline build script는 각 프로젝트 폴더 아래에 buildspec.yml 에 포함되었다.
 
-![image](https://user-images.githubusercontent.com/75828964/108723281-6adece00-7567-11eb-9616-82cff205f321.png)
-![image](https://user-images.githubusercontent.com/75828964/108723298-703c1880-7567-11eb-8912-c2c24c269b57.png)
-![image](https://user-images.githubusercontent.com/75828964/108723307-73370900-7567-11eb-8fda-cb13622e2b1e.png)
-![image](https://user-images.githubusercontent.com/75828964/108723317-76ca9000-7567-11eb-9dc2-0fe0765e8e3f.png)
-![image](https://user-images.githubusercontent.com/75828964/108723330-792cea00-7567-11eb-9065-09e6d73281fb.png)
+![image](https://user-images.githubusercontent.com/75828964/108964978-8e1c9100-76bf-11eb-99e3-14b0d48dae4a.png)
+![image](https://user-images.githubusercontent.com/75828964/108964985-8fe65480-76bf-11eb-9f78-9dfc433c64d1.png)
+![image](https://user-images.githubusercontent.com/75828964/108964987-91178180-76bf-11eb-9df3-79375b047983.png)
+![image](https://user-images.githubusercontent.com/75828964/108964990-9248ae80-76bf-11eb-95ba-a99c438a97d9.png)
+![image](https://user-images.githubusercontent.com/75828964/108964992-94127200-76bf-11eb-98cf-dbf4e087488f.png)
+![image](https://user-images.githubusercontent.com/75828964/108965001-97a5f900-76bf-11eb-9f54-1ae2b6b7d35d.png)
 
 ## 동기식 호출 / 서킷 브레이킹 / 장애격리
 
