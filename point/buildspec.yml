@@ -115,10 +115,10 @@ phases:
                     volumeMounts:
                     - name: logs
                       mountPath: /logs
-               volumes:
-               - name: logs
-                 persistentVolumeClaim:
-                   claimName: point-logs
+                volumes:
+                - name: logs
+                  persistentVolumeClaim:
+                    claimName: point-logs
           EOF
 cache:
   paths:
