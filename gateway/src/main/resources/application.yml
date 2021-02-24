@@ -69,7 +69,7 @@ spring:
         - id: point
           uri: http://point:8080
           predicates:
-            - Path= /points/**
+            - Path= /points/**,/pointHistories/**
       globalcors:
         corsConfigurations:
           '[/**]':
